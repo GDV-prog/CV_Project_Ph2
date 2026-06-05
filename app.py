@@ -67,10 +67,8 @@ try:
         import pages.face as face
     if hasattr(face, "render_face_detection_page"):
         render_face_detection_page = face.render_face_detection_page
-    else:
-        st.warning("Модуль `face.py` загружен, но не содержит функцию `render_face_detection_page`.")
-except Exception as e:
-    st.warning(f"Не удалось загрузить `face.py`: {type(e).__name__}: {e}")
+except Exception:
+    pass  # оставляем заглушку
 
 # Импорт wind.py
 try:
@@ -80,10 +78,8 @@ try:
         import pages.wind as wind
     if hasattr(wind, "render_wind_detection_page"):
         render_wind_detection_page = wind.render_wind_detection_page
-    else:
-        st.warning("Модуль `wind.py` загружен, но не содержит функцию `render_wind_detection_page`.")
-except Exception as e:
-    st.warning(f"Не удалось загрузить `wind.py`: {type(e).__name__}: {e}")
+except Exception:
+    pass
 
 # Импорт forest.py (семантическая сегментация)
 try:
@@ -93,10 +89,8 @@ try:
         import pages.forest as forest
     if hasattr(forest, "run_forest_segmentation_page"):
         run_forest_segmentation_page = forest.run_forest_segmentation_page
-    else:
-        st.warning("Модуль `forest.py` загружен, но не содержит функцию `run_forest_segmentation_page`.")
-except Exception as e:
-    st.warning(f"Не удалось загрузить `forest.py`: {type(e).__name__}: {e}")
+except Exception:
+    pass  # оставляем заглушку
 
 # ------------------------------------------------------------------
 # БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ
