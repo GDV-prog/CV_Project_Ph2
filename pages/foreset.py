@@ -6,6 +6,7 @@ import requests
 import io
 import os
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import plotly.graph_objects as go
 from PIL import Image
 
@@ -143,24 +144,37 @@ def run_forest_segmentation_page():
                             img_resized = img.resize((256, 256))
                             img_np = np.array(img_resized, dtype=np.float32) / 255.0
                             img_tensor = torch.tensor(img_np).permute(2, 0, 1).unsqueeze(0).to(device)
+                            
                             with torch.no_grad():
                                 pred = model(img_tensor)
-                                pred_mask = (torch.sigmoid(pred) > 0.35).squeeze().cpu().numpy()
+                                # Возвращаем инверсию, чтобы отделить лес от построек
+                                raw_mask = (torch.sigmoid(pred) > 0.35).squeeze().cpu().numpy()
+                                pred_mask = 1.0 - raw_mask
                         else:
                             pred_mask = np.zeros((256, 256))
                             pred_mask[40:220, 30:230] = 1.0
                         
+                        # Расчет процента зеленого покрова
                         forest_pixels = np.sum(pred_mask == 1.0)
                         total_pixels = pred_mask.size
                         forest_percentage = (forest_pixels / total_pixels) * 100
                         
+                        # Отрисовка маски
                         fig, ax = plt.subplots(figsize=(6, 6))
-                        ax.imshow(pred_mask, cmap="Greens", vmin=0, vmax=1.1)
+                        
+                        # 🔥 СОЗДАЕМ КАСТОМНУЮ ПАЛИТРУ: 
+                        # 0 (Фон/Здание) станет темно-серым в цвет темы, 1 (Лес) станет лесной зеленью
+                        custom_cmap = ListedColormap(['#1f242d', '#1E793C'])
+                        
+                        ax.imshow(pred_mask, cmap=custom_cmap)
                         ax.axis("off")
+                        
                         fig.patch.set_facecolor('#0e1117')
                         ax.set_facecolor('#0e1117')
+                        
                         st.pyplot(fig, use_container_width=True)
                         plt.close(fig)
+                        
                         st.metric(label="🌲 Покрытие лесного массива алгоритмом U-Net", value=f"{forest_percentage:.1f} %")
                 st.divider()
 
