@@ -13,8 +13,8 @@ from PIL import Image
 # 1. АРХИТЕКТУРА МОДЕЛИ
 # ====================================================================
 class DoubleConv(nn.Module):
-    def init(self, in_channels, out_channels):
-        super().init()
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -27,8 +27,8 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 class UNet(nn.Module):
-    def init(self, in_channels=3, out_channels=1):
-        super(UNet, self).init()
+    def __init__(self, in_channels=3, out_channels=1):
+        super(UNet, self).__init__()
         self.inc = DoubleConv(in_channels, 64)
         self.down1 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(64, 128))
         self.down2 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(128, 256))
@@ -63,7 +63,7 @@ class UNet(nn.Module):
         return self.outc(x)
 
 # ====================================================================
-# 2. БЕЗОПАСНАЯ ИЗОЛИРОВАННАЯ ЗАГРУЗКА ВЕСОВ МОДЕЛИ
+# 2. БЕЗОПАСНАЯ ЗАГРУЗКА ВЕСОВ
 # ====================================================================
 @st.cache_resource
 def load_unet_model_safe():
@@ -72,7 +72,6 @@ def load_unet_model_safe():
     
     possible_paths = ["models/unet_forest.pt", "../models/unet_forest.pt", "unet_forest.pt"]
     weights_path = None
-    
     for path in possible_paths:
         if os.path.exists(path):
             weights_path = path
@@ -85,12 +84,12 @@ def load_unet_model_safe():
             model.eval()
             return model, device, f"Успешно загружены веса из: {weights_path}"
         except Exception as e:
-            return None, device, f"⚠️ Веса найдены ({weights_path}), но не подошли к структуре: {e}"
+            return None, device, f"⚠️ Веса найдены ({weights_path}), но не подошли: {e}"
     else:
-        return None, device, "⚠️ Файл весов 'unet_forest.pt' не найден. Включен демо-режим масок."
+        return None, device, "⚠️ Файл весов 'unet_forest.pt' не найден. Демо-режим."
 
 # ====================================================================
-# 3. ОСНОВНАЯ ФУНКЦИЯ ДЛЯ ВЫЗОВА ИЗ APP.PY
+# 3. ОСНОВНАЯ ФУНКЦИЯ СТРАНИЦЫ
 # ====================================================================
 def run_forest_segmentation_page():
     st.caption("Автоматическое определение границ лесных массивов с помощью нейросети U-Net")
@@ -102,17 +101,15 @@ def run_forest_segmentation_page():
 
     tab1, tab2 = st.tabs(["📤 Обработка снимков", "📊 Аналитика обучения и Метрики"])
 
-# --- ВКЛАДКА 1: ОБРАБОТКА ДАННЫХ ---
     with tab1:
         st.subheader("Загрузка данных для анализа")
         
         uploaded_files = st.file_uploader(
-            "Выберите один или несколько аэрофотоснимков леса...", 
-            type=["jpg", "jpeg", "png"], 
+            "Выберите один или несколько аэрофотоснимков леса...",
+            type=["jpg", "jpeg", "png"],
             accept_multiple_files=True,
             key="forest_uploader_fixed"
         )
-        
         url_input = st.text_input(
             "Или вставьте прямую URL-ссылку на снимок:",
             placeholder="https://example.com",
@@ -136,22 +133,18 @@ def run_forest_segmentation_page():
         if images_to_process:
             st.write("### 🎯 Результаты сегментации лесных массивов:")
             for name, img in images_to_process:
-                st.markdown(f"Файл: {name}")
+                st.markdown(f"**Файл:** {name}")
                 col1, col2 = st.columns(2)
-                
                 with col1:
                     st.image(img, caption="Оригинальный снимок", use_container_width=True)
-                    
                 with col2:
                     with st.spinner("Генерация маски..."):
                         if model is not None:
                             img_resized = img.resize((256, 256))
                             img_np = np.array(img_resized, dtype=np.float32) / 255.0
                             img_tensor = torch.tensor(img_np).permute(2, 0, 1).unsqueeze(0).to(device)
-                            
                             with torch.no_grad():
                                 pred = model(img_tensor)
-                                # 🔥 Исправление инверсии: инвертируем маску, чтобы закрашивать лес, а не фон
                                 raw_mask = (torch.sigmoid(pred) > 0.35).squeeze().cpu().numpy()
                                 pred_mask = 1.0 - raw_mask
                         else:
@@ -163,20 +156,15 @@ def run_forest_segmentation_page():
                         forest_percentage = (forest_pixels / total_pixels) * 100
                         
                         fig, ax = plt.subplots(figsize=(6, 6))
-                        # Подложка фона — чёрная, маска леса — зелёная
                         ax.imshow(pred_mask, cmap="Greens", vmin=0, vmax=1.1)
                         ax.axis("off")
-                        
                         fig.patch.set_facecolor('#0e1117')
                         ax.set_facecolor('#0e1117')
-                        
                         st.pyplot(fig, use_container_width=True)
                         plt.close(fig)
-                        
                         st.metric(label="🌲 Покрытие лесного массива алгоритмом U-Net", value=f"{forest_percentage:.1f} %")
                 st.divider()
 
-# --- ВКЛАДКА 2: АНАЛИТИКА ОБУЧЕНИЯ ---
     with tab2:
         st.subheader("📋 Параметры и качество процесса обучения")
         
@@ -187,13 +175,12 @@ def run_forest_segmentation_page():
         
         st.table({
             "Метрика качества": [
-                "Dice Coefficient (F1-Score)", "IoU (Intersection over Union)", 
+                "Dice Coefficient (F1-Score)", "IoU (Intersection over Union)",
                 "Финальный Train Loss", "Финальный Val Loss", "Ранняя остановка"
             ],
             "Значение модели U-Net": ["0.7737", "0.6956", "0.3395", "0.3354", "5 эпох без улучшений"]
         })
         
-        # Исправленный массив и отрисовка графика
         epochs_range = list(range(1, 14))
         train_loss_history = [0.4222, 0.4027, 0.3887, 0.3785, 0.3728, 0.3661, 0.3644, 0.3634, 0.3620, 0.3542, 0.3543, 0.3501, 0.3395]
         val_loss_history = [0.4310, 0.4112, 0.3950, 0.3820, 0.3790, 0.3710, 0.3685, 0.3650, 0.3630, 0.3590, 0.3550, 0.3480, 0.3354]
@@ -206,9 +193,9 @@ def run_forest_segmentation_page():
         ax_loss.set_ylabel("Значение Loss")
         ax_loss.legend()
         ax_loss.grid(True, linestyle="--", alpha=0.5)
-        
         st.pyplot(fig_loss, use_container_width=True)
         plt.close(fig_loss)
 
-
-
+# ====================================================================
+# ВАЖНО: НИКАКОГО ВЫЗОВА ФУНКЦИИ ЗДЕСЬ НЕТ!
+# ====================================================================
