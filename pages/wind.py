@@ -51,7 +51,7 @@ def find_image_path(filename):
 # ОСНОВНАЯ ФУНКЦИЯ СТРАНИЦЫ
 # ----------------------------------------------------------------------
 def render_wind_detection_page():
-    st.set_page_config(page_title="Детекция ветрогенераторов", layout="wide")
+    # Убрано: st.set_page_config(...) - конфликтует с app.py
     st.markdown("# 🌬️ Детекция ветрогенераторов (YOLOv11m)")
 
     # === БОКОВАЯ ПАНЕЛЬ С НАСТРОЙКАМИ ===
@@ -109,7 +109,7 @@ def render_wind_detection_page():
                         images_to_process.append((img, "Изображение по ссылке"))
                     else:
                         st.error(f"Не удалось получить изображение. Ошибка сервера: {response.status_code}")
-                except Exception as e:
+                except Exception:
                     st.error("Не удалось загрузить изображение. Проверьте URL.")
 
     # === ОБРАБОТКА КАЖДОГО ИЗОБРАЖЕНИЯ ===
@@ -118,9 +118,7 @@ def render_wind_detection_page():
             st.markdown("---")
             st.subheader(f"Источник: {name}")
 
-            # Преобразуем PIL -> numpy (RGB) -> BGR для OpenCV
             img_np = np.array(pil_img)
-            # YOLO принимает RGB, но .plot() возвращает BGR
             results = model(img_np, conf=conf_threshold, iou=iou_threshold, verbose=False)
             annotated = results[0].plot()  # BGR
             annotated_rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
@@ -131,14 +129,13 @@ def render_wind_detection_page():
             with col2:
                 st.image(annotated_rgb, caption=f"Результат (Conf: {conf_threshold}, IoU: {iou_threshold})", use_container_width=True)
 
-            # Вывод количества найденных объектов
             boxes = results[0].boxes
             if boxes is not None:
                 st.write(f"Обнаружено объектов: {len(boxes)}")
             else:
                 st.write("Объектов не обнаружено")
 
-    # === БЛОК МЕТРИК И ГРАФИКОВ (аналогично face.py) ===
+    # === БЛОК МЕТРИК И ГРАФИКОВ ===
     with st.expander("📊 Информация о модели, качестве и процессе обучения (Ветрогенераторы)"):
         st.markdown("""
         **Метрики обучения YOLOv11m**  
@@ -146,10 +143,8 @@ def render_wind_detection_page():
         * **Объем выборки:** см. data.yaml (train/valid)  
         """)
 
-        # Создаём внутренние вкладки для графиков
         metric_tabs = st.tabs(["📈 Результаты обучения (Loss/mAP)", "🎯 PR Кривая", "🧩 Матрица ошибок"])
 
-        # 1. Результаты и Loss
         with metric_tabs[0]:
             st.markdown("**Графики функций потерь и метрик качества**")
             img_path = find_image_path("wind_results.png")
@@ -157,18 +152,16 @@ def render_wind_detection_page():
                 st.image(img_path, caption="YOLOv11 Training Results", use_container_width=True)
             else:
                 st.info("Файл `images/wind_results.png` ещё не добавлен в проект.")
-
             st.markdown("""
             **Анализ графиков обучения:**  
             - **Функции потерь:** box_loss, cls_loss, dfl_loss плавно снижаются с 0.25 до 0.01, демонстрируя устойчивую сходимость модели без явного переобучения.  
             - **Метрики:** По данным Precision-Recall кривой, итоговые значения:  
-            - mAP@0.5: **0.826**  
-            - AP для класса `cable tower`: **0.778**  
-            - AP для класса `turbine`: **0.874**  
-            - Precision и Recall на валидации стабилизировались на приемлемом уровне.
+              - mAP@0.5: **0.826**  
+              - AP для класса `cable tower`: **0.778**  
+              - AP для класса `turbine`: **0.874**  
+              - Precision и Recall на валидации стабилизировались на приемлемом уровне.
             """)
 
-        # 2. PR-кривая
         with metric_tabs[1]:
             st.markdown("**Кривая Точности-Полноты (Precision-Recall Curve)**")
             img_path = find_image_path("wind_boxpr_curve.png")
@@ -183,7 +176,6 @@ def render_wind_detection_page():
             - Кривая показывает высокую точность (precision) при recall до 0.8, затем плавное снижение – модель уверенно обнаруживает большинство объектов.
             """)
 
-        # 3. Матрица ошибок
         with metric_tabs[2]:
             st.markdown("**Матрица ошибок (Confusion Matrix) финальной эпохи**")
             img_path = find_image_path("wind_confusion_matrix.png")
@@ -200,5 +192,5 @@ def render_wind_detection_page():
             """)
 
 # ----------------------------------------------------------------------
-if __name__ == "__main__":
-    render_wind_detection_page()
+# Никаких вызовов функции на уровне модуля!
+# ----------------------------------------------------------------------
