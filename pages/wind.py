@@ -118,7 +118,7 @@ def render_wind_detection_page():
             st.markdown("---")
             st.subheader(f"Источник: {name}")
 
-            iimg_np = np.array(pil_img)
+            img_np = np.array(pil_img)
             results = model(img_np, conf=conf_threshold, iou=iou_threshold, verbose=False)
             annotated_rgb = results[0].plot()  # уже RGB
 
