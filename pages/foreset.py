@@ -145,8 +145,7 @@ def run_forest_segmentation_page():
                             img_tensor = torch.tensor(img_np).permute(2, 0, 1).unsqueeze(0).to(device)
                             with torch.no_grad():
                                 pred = model(img_tensor)
-                                raw_mask = (torch.sigmoid(pred) > 0.35).squeeze().cpu().numpy()
-                                pred_mask = 1.0 - raw_mask
+                                pred_mask = (torch.sigmoid(pred) > 0.35).squeeze().cpu().numpy()
                         else:
                             pred_mask = np.zeros((256, 256))
                             pred_mask[40:220, 30:230] = 1.0
