@@ -211,5 +211,4 @@ def run_forest_segmentation_page():
         plt.close(fig_loss)
 
 
-# 🔥 ТОЧКА ВХОДА ДЛЯ STREAMLIT (Прямой вызов без IF на самом краю файла):
-run_forest_segmentation_page()
+
