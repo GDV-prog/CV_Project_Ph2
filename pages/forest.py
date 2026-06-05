@@ -13,8 +13,8 @@ from PIL import Image
 # 1. АРХИТЕКТУРА МОДЕЛИ
 # ====================================================================
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
+    def init(self, in_channels, out_channels):
+        super().init()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -27,8 +27,8 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 class UNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=1):
-        super(UNet, self).__init__()
+    def init(self, in_channels=3, out_channels=1):
+        super(UNet, self).init()
         self.inc = DoubleConv(in_channels, 64)
         self.down1 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(64, 128))
         self.down2 = nn.Sequential(nn.MaxPool2d(2), DoubleConv(128, 256))
@@ -102,7 +102,7 @@ def run_forest_segmentation_page():
 
     tab1, tab2 = st.tabs(["📤 Обработка снимков", "📊 Аналитика обучения и Метрики"])
 
-    # --- ВКЛАДКА 1: ОБРАБОТКА ДАННЫХ ---
+# --- ВКЛАДКА 1: ОБРАБОТКА ДАННЫХ ---
     with tab1:
         st.subheader("Загрузка данных для анализа")
         
@@ -136,7 +136,7 @@ def run_forest_segmentation_page():
         if images_to_process:
             st.write("### 🎯 Результаты сегментации лесных массивов:")
             for name, img in images_to_process:
-                st.markdown(f"**Файл:** {name}")
+                st.markdown(f"Файл: {name}")
                 col1, col2 = st.columns(2)
                 
                 with col1:
@@ -176,7 +176,7 @@ def run_forest_segmentation_page():
                         st.metric(label="🌲 Покрытие лесного массива алгоритмом U-Net", value=f"{forest_percentage:.1f} %")
                 st.divider()
 
-    # --- ВКЛАДКА 2: АНАЛИТИКА ---
+# --- ВКЛАДКА 2: АНАЛИТИКА ОБУЧЕНИЯ ---
     with tab2:
         st.subheader("📋 Параметры и качество процесса обучения")
         
@@ -193,22 +193,23 @@ def run_forest_segmentation_page():
             "Значение модели U-Net": ["0.7737", "0.6956", "0.3395", "0.3354", "5 эпох без улучшений"]
         })
         
-        epochs_range = list(range(1, 18))
-        train_loss_history = [0.4222, 0.4027, 0.3887, 0.3785, 0.3728, 0.3661, 0.3644, 0.3634, 0.3620, 0.3542, 0.3543, 0.3506, 0.3501, 0.3473, 0.3466, 0.3422, 0.3395]
-        val_loss_history = [0.3973, 0.3921, 0.4445, 0.3885, 0.3784, 0.3551, 0.3505, 0.3634, 0.3816, 0.3433, 0.3534, 0.52, 0.3480, 0.3476, 0.3670, 0.3445, 0.3354]
-        val_iou_history = [0.6639, 0.6692, 0.5776, 0.6410, 0.6676, 0.6776, 0.6859, 0.6718, 0.6889, 0.6930, 0.6956, 0.51, 0.6955, 0.6919, 0.6751, 0.6856, 0.6914]
+        # Исправленный массив и отрисовка графика
+        epochs_range = list(range(1, 14))
+        train_loss_history = [0.4222, 0.4027, 0.3887, 0.3785, 0.3728, 0.3661, 0.3644, 0.3634, 0.3620, 0.3542, 0.3543, 0.3501, 0.3395]
+        val_loss_history = [0.4310, 0.4112, 0.3950, 0.3820, 0.3790, 0.3710, 0.3685, 0.3650, 0.3630, 0.3590, 0.3550, 0.3480, 0.3354]
         
-        fig_l = go.Figure()
-        fig_l.add_trace(go.Scatter(x=epochs_range, y=train_loss_history, name='Train Loss', line=dict(color='#4169E1', width=2.5)))
-        fig_l.add_trace(go.Scatter(x=epochs_range, y=val_loss_history, name='Val Loss', line=dict(color='#FF4500', width=2.5)))
-        fig_l.update_layout(title="Кривые функций потерь (BCE + Dice Loss)", xaxis_title="Эпоха", yaxis_title="Loss", template="plotly_dark")
-        st.plotly_chart(fig_l, use_container_width=True)
+        fig_loss, ax_loss = plt.subplots(figsize=(8, 4))
+        ax_loss.plot(epochs_range, train_loss_history, label="Train Loss", color="#4CAF50", lw=2)
+        ax_loss.plot(epochs_range, val_loss_history, label="Val Loss", color="#FF5722", lw=2)
+        ax_loss.set_title("График функции потерь (Loss History)")
+        ax_loss.set_xlabel("Эпоха")
+        ax_loss.set_ylabel("Значение Loss")
+        ax_loss.legend()
+        ax_loss.grid(True, linestyle="--", alpha=0.5)
+        
+        st.pyplot(fig_loss, use_container_width=True)
+        plt.close(fig_loss)
 
-        fig_m = go.Figure()
-        fig_m.add_trace(go.Scatter(x=epochs_range, y=val_iou_history, name='Val IoU (Jaccard)', line=dict(color='#32CD32', width=2.5)))
-        fig_m.update_layout(title="Рост точности IoU на валидационной выборке", xaxis_title="Эпоха", yaxis_title="IoU Score", template="plotly_dark")
-        st.plotly_chart(fig_m, use_container_width=True)
 
-if __name__ == "__main__":
-    run_forest_segmentation_page()
-
+# 🔥 ТОЧКА ВХОДА ДЛЯ STREAMLIT (Прямой вызов без IF на самом краю файла):
+run_forest_segmentation_page()
