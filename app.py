@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import traceback
 
 # Добавляем пути для импорта
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -44,9 +45,9 @@ def wind_page_stub():
              "```")
 
 def forest_page_stub():
-    st.error("❌ Страница 'Семантическая сегментация' недоступна.\n\n"
-             "**Причина:** не удалось загрузить модуль `forest.py` или в нём отсутствует функция `run_forest_segmentation_page`.\n\n"
-             "**Решение:** убедитесь, что файл `pages/forest.py` существует и содержит определение:\n"
+    st.error("❌ Страница 'Сегментация космоснимков' недоступна.\n\n"
+             "**Причина:** не удалось загрузить модуль `foreset.py` или в нём отсутствует функция `run_forest_segmentation_page`.\n\n"
+             "**Решение:** убедитесь, что файл `pages/foreset.py` существует и содержит определение:\n"
              "```python\n"
              "def run_forest_segmentation_page():\n"
              "    # ваш код\n"
@@ -67,8 +68,10 @@ try:
         import pages.face as face
     if hasattr(face, "render_face_detection_page"):
         render_face_detection_page = face.render_face_detection_page
-except Exception:
-    pass  # оставляем заглушку
+    else:
+        st.warning("Модуль `face.py` загружен, но не содержит функцию `render_face_detection_page`.")
+except Exception as e:
+    st.warning(f"Не удалось загрузить `face.py`: {type(e).__name__}: {e}")
 
 # Импорт wind.py
 try:
@@ -78,19 +81,23 @@ try:
         import pages.wind as wind
     if hasattr(wind, "render_wind_detection_page"):
         render_wind_detection_page = wind.render_wind_detection_page
-except Exception:
-    pass
+    else:
+        st.warning("Модуль `wind.py` загружен, но не содержит функцию `render_wind_detection_page`.")
+except Exception as e:
+    st.warning(f"Не удалось загрузить `wind.py`: {type(e).__name__}: {e}")
 
-# Импорт forest.py (семантическая сегментация)
+# 🔥 Динамический импорт под ваше точное имя файла "foreset"
 try:
     try:
-        import forest
+        import foreset
     except ImportError:
-        import pages.forest as forest
-    if hasattr(forest, "run_forest_segmentation_page"):
-        run_forest_segmentation_page = forest.run_forest_segmentation_page
-except Exception:
-    pass  # оставляем заглушку
+        import pages.foreset as foreset
+    if hasattr(foreset, "run_forest_segmentation_page"):
+        run_forest_segmentation_page = foreset.run_forest_segmentation_page
+    else:
+        st.warning("Модуль `foreset.py` загружен, но не содержит функцию `run_forest_segmentation_page`.")
+except Exception as e:
+    st.warning(f"Не удалось загрузить `foreset.py`: {type(e).__name__}: {e}")
 
 # ------------------------------------------------------------------
 # БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ
