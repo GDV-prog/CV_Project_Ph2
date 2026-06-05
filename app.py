@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import sys
-import traceback
 
 # Добавляем пути для импорта
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -44,11 +43,21 @@ def wind_page_stub():
              "    # ваш код\n"
              "```")
 
+def forest_page_stub():
+    st.error("❌ Страница 'Семантическая сегментация' недоступна.\n\n"
+             "**Причина:** не удалось загрузить модуль `forest.py` или в нём отсутствует функция `run_forest_segmentation_page`.\n\n"
+             "**Решение:** убедитесь, что файл `pages/forest.py` существует и содержит определение:\n"
+             "```python\n"
+             "def run_forest_segmentation_page():\n"
+             "    # ваш код\n"
+             "```")
+
 # ------------------------------------------------------------------
 # БЕЗОПАСНЫЙ ИМПОРТ МОДУЛЕЙ
 # ------------------------------------------------------------------
 render_face_detection_page = face_page_stub
 render_wind_detection_page = wind_page_stub
+run_forest_segmentation_page = forest_page_stub
 
 # Импорт face.py
 try:
@@ -76,6 +85,19 @@ try:
 except Exception as e:
     st.warning(f"Не удалось загрузить `wind.py`: {type(e).__name__}: {e}")
 
+# Импорт forest.py (семантическая сегментация)
+try:
+    try:
+        import forest
+    except ImportError:
+        import pages.forest as forest
+    if hasattr(forest, "run_forest_segmentation_page"):
+        run_forest_segmentation_page = forest.run_forest_segmentation_page
+    else:
+        st.warning("Модуль `forest.py` загружен, но не содержит функцию `run_forest_segmentation_page`.")
+except Exception as e:
+    st.warning(f"Не удалось загрузить `forest.py`: {type(e).__name__}: {e}")
+
 # ------------------------------------------------------------------
 # БОКОВАЯ ПАНЕЛЬ НАВИГАЦИИ
 # ------------------------------------------------------------------
@@ -96,9 +118,6 @@ with st.sidebar:
     st.caption("Разработчик Дорджи: Детекция ветрогенераторов")
     st.caption("Совместно: Семантическая сегментация аэрокосмических снимков")
 
-# ------------------------------------------------------------------
-# РЕНДЕРИНГ ВЫБРАННОЙ СТРАНИЦЫ
-# ------------------------------------------------------------------
 # ------------------------------------------------------------------
 # РЕНДЕРИНГ ВЫБРАННОЙ СТРАНИЦЫ
 # ------------------------------------------------------------------
@@ -128,13 +147,4 @@ elif page == "💨 Детекция ветрогенераторов":
     render_wind_detection_page()
 
 elif page == "✳️ Семантическая сегментация аэрокосмических снимков":
-    # Импорт и вызов страницы сегментации (с заглушкой, если файл отсутствует)
-    try:
-        from pages.forest import run_forest_segmentation_page
-        run_forest_segmentation_page()
-    except ModuleNotFoundError:
-        st.error("❌ Модуль 'Семантическая сегментация' не найден.")
-        st.info("Убедитесь, что файл `pages/forest.py` существует и содержит функцию `run_forest_segmentation_page()`.")
-    except Exception as e:
-        st.error("🔥 Непредвиденная ошибка при загрузке страницы сегментации:")
-        st.code(str(e))
+    run_forest_segmentation_page()
