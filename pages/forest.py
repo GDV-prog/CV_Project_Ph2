@@ -209,5 +209,5 @@ def run_forest_segmentation_page():
         fig_m.update_layout(title="Рост точности IoU на валидационной выборке", xaxis_title="Эпоха", yaxis_title="IoU Score", template="plotly_dark")
         st.plotly_chart(fig_m, use_container_width=True)
 
-if __name__ == "__main__":
-    run_forest_segmentation_page()
+st.divider()
+run_forest_segmentation_page()
