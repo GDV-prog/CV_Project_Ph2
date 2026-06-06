@@ -24,7 +24,7 @@ PROJECT_ROOT = get_project_root()
 def find_weights():
     """Ищет веса модели yolo11m_wind.pt."""
     candidates = [
-        PROJECT_ROOT / "models" / "yolo11m_wind.pt",
+        PROJECT_ROOT / "models" / "yolo11m_best_wind.pt",
         PROJECT_ROOT / "models" / "best.pt",
         PROJECT_ROOT / "wind_train" / "exp" / "weights" / "best.pt",
         PROJECT_ROOT / "notebooks" / "wind_train" / "exp" / "weights" / "best.pt",
@@ -73,7 +73,7 @@ def render_wind_detection_page():
     # === ЗАГРУЗКА МОДЕЛИ ===
     weights_path = find_weights()
     if weights_path is None:
-        st.error("❌ Файл весов не найден! Убедитесь, что `models/yolo11m_wind.pt` существует.")
+        st.error("❌ Файл весов не найден! Убедитесь, что `models/yolo11m_best_wind.pt` существует.")
         return
 
     @st.cache_resource
@@ -138,7 +138,7 @@ def render_wind_detection_page():
     with st.expander("📊 Информация о модели, качестве и процессе обучения (Ветрогенераторы)"):
         st.markdown("""
         **Метрики обучения YOLOv11m**  
-        * **Число эпох обучения:** 100  
+        * **Число эпох обучения:** 50  
         * **Объем выборки:** см. data.yaml (train/valid)  
         """)
 
@@ -146,48 +146,58 @@ def render_wind_detection_page():
 
         with metric_tabs[0]:
             st.markdown("**Графики функций потерь и метрик качества**")
-            img_path = find_image_path("wind_results.png")
+            img_path = find_image_path("windF_results.png")
             if img_path:
                 st.image(img_path, caption="YOLOv11 Training Results", use_container_width=True)
             else:
-                st.info("Файл `images/wind_results.png` ещё не добавлен в проект.")
+                st.info("Файл `images/windF_results.png` ещё не добавлен в проект.")
             st.markdown("""
-            **Анализ графиков обучения:**  
-            - **Функции потерь:** box_loss, cls_loss, dfl_loss плавно снижаются с 0.25 до 0.01, демонстрируя устойчивую сходимость модели без явного переобучения.  
-            - **Метрики:** По данным Precision-Recall кривой, итоговые значения:  
-              - mAP@0.5: **0.826**  
-              - AP для класса `cable tower`: **0.778**  
-              - AP для класса `turbine`: **0.874**  
-              - Precision и Recall на валидации стабилизировались на приемлемом уровне.
+            **Анализ графиков обучения (финальная модель YOLOv11m):**  
+            - **Функции потерь:** `box_loss`, `cls_loss`, `dfl_loss` быстро снижаются с ~1.65 до ~0.50–0.52 и далее стабилизируются, демонстрируя отличную сходимость без переобучения.  
+            - **Метрики (по итогам 80 эпох):**  
+              - `Precision` = **0.96**  
+              - `Recall` = **0.98**  
+              - `mAP50` = **0.96**  
+              - `mAP50-95` = **0.78**  
+            - **Итоговый mAP@0.5 по Precision‑Recall кривой = 0.968**.  
+            - Модель достигла очень высокой точности и полноты, пригодна для промышленного применения.
             """)
 
         with metric_tabs[1]:
             st.markdown("**Кривая Точности-Полноты (Precision-Recall Curve)**")
-            img_path = find_image_path("wind_boxpr_curve.png")
+            img_path = find_image_path("windF_boxpr_curve.png")
             if img_path:
                 st.image(img_path, caption="Precision-Recall Curve", use_container_width=True)
             else:
-                st.info("Файл `images/wind_boxpr_curve.png` ещё не добавлен.")
+                st.info("Файл `images/windF_boxpr_curve.png` ещё не добавлен.")
             st.markdown("""
-            **Анализ PR-кривой:**  
-            - Площадь под кривой (AP) для класса `cable tower` = **0.778**, для `turbine` = **0.874**.  
-            - Средний mAP@0.5 по всем классам = **0.826**, что является хорошим показателем для детекции ветрогенераторов.  
-            - Кривая показывает высокую точность (precision) при recall до 0.8, затем плавное снижение – модель уверенно обнаруживает большинство объектов.
+            **Анализ Precision‑Recall кривой (новые результаты):**  
+            - **Средний mAP@0.5 = 0.968** – выдающийся результат для детекции ветрогенераторов.  
+            - **AP для класса `cable tower` = 0.985** (почти идеально).  
+            - **AP для класса `turbine` = 0.951** (также очень высоко).  
+            - Кривая практически лежит в правом верхнем углу: при recall до 0.9 точность сохраняется около 0.95–1.0.  
+            - Модель уверенно обнаруживает оба класса с минимальным количеством ложных срабатываний.
             """)
 
         with metric_tabs[2]:
             st.markdown("**Матрица ошибок (Confusion Matrix) финальной эпохи**")
-            img_path = find_image_path("wind_confusion_matrix.png")
+            img_path = find_image_path("windF_confusion_matrix.png")
             if img_path:
                 st.image(img_path, caption="Confusion Matrix", use_container_width=True)
             else:
-                st.info("Файл `images/wind_confusion_matrix.png` ещё не добавлен.")
+                st.info("Файл `images/windF_confusion_matrix.png` ещё не добавлен.")
             st.markdown("""
-            **Анализ матрицы ошибок (нормированной):**  
-            - **cable tower:** правильно распознано **15** объектов, **341** ошибочно принято за `turbine`.  
-            - **turbine:** правильно распознано **1197** объектов, **117** ошибочно принято за `cable tower`.  
-            - **background:** 9 объектов фона ошибочно классифицированы как `cable tower`.  
-            - Основная путаница – между классами «кабельная вышка» и «турбина» из-за визуальной схожести. Высокое количество ложных срабатываний для `cable tower` может быть снижено повышением порога уверенности.
+            **Анализ матрицы ошибок (Confusion Matrix) финальной эпохи:**  
+            - **Класс `cable tower`:**  
+              - Верно распознано: **160** объектов.  
+              - Ошибочно принято за `turbine`: **43** (ложные срабатывания).  
+              - Пропущено (фон или другое): **6** (из строки background).  
+            - **Класс `turbine`:**  
+              - Верно распознано: **949** объектов.  
+              - Ошибочно принято за `cable tower`: **6** (ложные срабатывания).  
+              - Пропущено: **0**.  
+            - **Фон:** 6 объектов фона ошибочно классифицированы как `cable tower`.  
+            - **Вывод:** минимальная путаница между классами (43 и 6), высокое качество детекции. Повышение порога уверенности может убрать оставшиеся ложные срабатывания на фоне.
             """)
 
 # ----------------------------------------------------------------------
